@@ -38,10 +38,37 @@ import tensorflow_addons as tfa
 ## Prepare the data
 """
 
-num_classes = 100
-input_shape = (32, 32, 3)
+import tensorflow as tf
+import tensorflow_datasets as tfds
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
+"""
+### Construct a tf.data.Dataset
+"""
+
+# https://www.tensorflow.org/datasets/catalog/so2sat
+train_ds, test_ds = tfds.load('so2sat', selection='all', split=['train', 'test[50%]'])
+
+"""
+### Build your input pipeline
+"""
+import matplotlib.pyplot as plt
+
+n = 4
+plt.figure(figsize=(n, n))
+
+train_ds = train_ds.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+for i, example in enumerate(train_ds.take(n*n)):
+  ax = plt.subplot(n, n, i + 1)
+  image, label = example["sentinel1"], example["label"]
+  plt.imshow(image.astype("float32"))
+  ax.title.set_text(label)
+plt.show()
+
+num_classes = 17
+input_shape = (32, 32, 8)
+
+y_train, ids_train, x_train = list(zip(*[[ex['label'], ex['sample_id'], ex['sentinel1']] for ex in tfds.as_numpy(train_ds)]))
+y_test, ids_test, x_test = list(zip(*[[ex['label'], ex['sample_id'], ex['sentinel1']] for ex in tfds.as_numpy(test_ds)]))
 
 print(f"x_train shape: {x_train.shape} - y_train shape: {y_train.shape}")
 print(f"x_test shape: {x_test.shape} - y_test shape: {y_test.shape}")
